@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MenteCrítica — Simulador de Pensamiento Crítico</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════════ */
+:root {
+  --bg:      #0d0c0b;
+  --bg2:     #131210;
+  --bg3:     #1a1916;
+  --bg4:     #222018;
+  --surface: #1e1c18;
+  --surface2:#252320;
+  --gold:    #c9960a;
+  --gold-l:  #e8b420;
+  --gold-d:  #8a6504;
+  --amber:   #d4831a;
+  --cream:   #f0e8d8;
+  --cream2:  #c8bfa8;
+  --muted:   #7a7060;
+  --border:  rgba(201,150,10,0.15);
+  --border2: rgba(201,150,10,0.30);
+  --green:   #1e6e48;
+  --green-l: #e4f3ec;
+  --red-c:   #8b1c1c;
+  --red-l:   #fdecea;
+  --white:   #faf8f3;
+  --r:12px; --rl:20px; --rxl:28px;
+  --sh: 0 8px 32px rgba(0,0,0,.45);
+  --sh2:0 2px 12px rgba(0,0,0,.3);
+  --fh:'Playfair Display',serif;
+  --fb:'Outfit',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+}
+
+/* ════════════════════════════════════════
+   BASE
+════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--fb);background:var(--bg);color:var(--cream);
+  min-height:100vh;overflow-x:hidden;line-height:1.65;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%,rgba(201,150,10,.08) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 30% at 90% 110%,rgba(212,131,26,.05) 0%,transparent 50%);
+}
+
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+#hdr {
+  position:sticky;top:0;z-index:300;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.7rem 1.5rem;
+  background:rgba(13,12,11,.88);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.logo {
+  font-family:var(--fh);font-weight:900;font-size:1.15rem;
+  letter-spacing:-.01em;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold-l),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hud {display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.chip {
+  display:flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:4px 10px;font-family:var(--fm);font-size:.72rem;color:var(--cream2);
+  white-space:nowrap;transition:border-color .2s;
+}
+.chip:hover{border-color:var(--border2)}
+.chip-ico{font-size:12px}
+.xp-bar-wrap{width:68px;height:4px;background:var(--bg4);border-radius:10px;overflow:hidden}
+.xp-bar-inner{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:10px;transition:width .6s ease}
+
+/* ════════════════════════════════════════
+   SCREENS
+════════════════════════════════════════ */
+.scr{display:none;max-width:860px;margin:0 auto;padding:2rem 1.25rem 4rem}
+.scr.on{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ════════════════════════════════════════
+   BACK BAR
+════════════════════════════════════════ */
+.topbar {
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2rem;padding-bottom:1rem;
+  border-bottom:1px solid var(--border);
+}
+.back-btn {
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:6px 13px;font-family:var(--fm);font-size:.72rem;color:var(--cream2);
+  cursor:pointer;transition:all .15s;text-decoration:none;
+}
+.back-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--cream)}
+.scr-label {
+  font-family:var(--fm);font-size:.68rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;
+}
+
+/* ════════════════════════════════════════
+   HOME
+════════════════════════════════════════ */
+#s-home{text-align:center;padding-top:3rem}
+.home-eyebrow{
+  font-family:var(--fm);font-size:.68rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:1rem;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.home-eyebrow::before,.home-eyebrow::after{content:'';width:28px;height:1px;background:var(--gold-d)}
+.home-title{
+  font-family:var(--fh);font-weight:900;
+  font-size:clamp(2.4rem,7vw,4.5rem);line-height:1.04;
+  letter-spacing:-.02em;margin-bottom:.5rem;
+}
+.home-title .italic{font-style:italic;color:var(--gold-l)}
+.home-sub{
+  color:var(--cream2);font-size:.95rem;max-width:460px;margin:1rem auto 3rem;
+  line-height:1.7;font-weight:300;
+}
+
+/* Mode cards grid */
+.modes-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:.85rem;margin-bottom:2.5rem;
+}
+@media(max-width:620px){.modes-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:400px){.modes-grid{grid-template-columns:1fr}}
+
+.mcard {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:1.4rem 1.1rem;
+  text-align:left;cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),border-color .2s,box-shadow .2s;
+}
+.mcard::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(201,150,10,.06) 0%,transparent 60%);
+  opacity:0;transition:opacity .25s;
+}
+.mcard:hover{transform:translateY(-5px) scale(1.01);border-color:var(--border2);box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.mcard:hover::before{opacity:1}
+.mcard-ico{font-size:2rem;margin-bottom:.9rem;display:block;line-height:1}
+.mcard-name{
+  font-family:var(--fh);font-weight:700;font-size:.98rem;
+  margin-bottom:.3rem;color:var(--white);
+}
+.mcard-desc{font-size:.78rem;color:var(--muted);line-height:1.55}
+.mbadge{
+  position:absolute;top:10px;right:10px;
+  font-family:var(--fm);font-size:.6rem;padding:2px 8px;
+  border-radius:20px;font-weight:500;
+}
+.mb-gold{background:linear-gradient(90deg,var(--gold-d),var(--gold));color:#fff}
+.mb-new{background:var(--amber);color:#fff}
+.mb-dark{background:var(--bg);color:var(--cream2);border:1px solid var(--border)}
+
+/* home stats */
+.home-stats{
+  display:flex;justify-content:center;gap:3rem;flex-wrap:wrap;
+  padding:1.5rem 0;border-top:1px solid var(--border);
+}
+.hstat-num{
+  font-family:var(--fh);font-weight:900;font-size:2.2rem;
+  letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(135deg,var(--gold-l),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hstat-lbl{font-family:var(--fm);font-size:.63rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+/* ════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;border:none;
+  font-family:var(--fb);font-weight:600;font-size:.9rem;
+  padding:11px 22px;border-radius:10px;transition:all .15s;text-decoration:none;
+}
+.btn:active{transform:scale(.97)}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#0d0c0b;
+  box-shadow:0 4px 20px rgba(201,150,10,.35);
+}
+.btn-gold:hover{box-shadow:0 6px 28px rgba(201,150,10,.5);transform:translateY(-1px)}
+.btn-outline{
+  background:transparent;color:var(--cream2);
+  border:1px solid var(--border2);
+}
+.btn-outline:hover{background:var(--bg3);color:var(--cream);border-color:var(--gold-d)}
+.btn-ghost{background:var(--bg3);color:var(--cream2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg4);color:var(--cream)}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red-c);color:#fff}
+.btn-lg{padding:14px 32px;font-size:1rem}
+.btn-sm{padding:7px 14px;font-size:.78rem}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ════════════════════════════════════════
+   FLASHCARDS
+════════════════════════════════════════ */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.1rem;margin-bottom:1.5rem}
+.flip-card{width:100%;height:360px;perspective:1200px;cursor:pointer}
+.flip-inner{
+  position:relative;width:100%;height:100%;
+  transition:transform .75s cubic-bezier(.4,0,.2,1);
+  transform-style:preserve-3d;border-radius:var(--rl);
+}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-f,.flip-b{
+  position:absolute;width:100%;height:100%;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:var(--rl);padding:1.6rem;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.flip-f{
+  background:var(--surface);border:1px solid var(--border);
+  border-top:2px solid var(--gold);align-items:flex-start;
+}
+.flip-b{transform:rotateY(180deg);color:#fff;align-items:center;text-align:center}
+.flip-b.fok{background:linear-gradient(135deg,#0f3d26,#1e6e48)}
+.flip-b.fko{background:linear-gradient(135deg,#3d0f0f,#7a1c1c)}
+.flip-b.finfo{background:linear-gradient(135deg,#0f1a3d,#2c3a8a)}
+.fc-q{
+  font-family:var(--fh);font-weight:700;font-size:.95rem;
+  color:var(--gold-l);margin-bottom:.9rem;line-height:1.4;
+}
+.fc-scene{
+  background:var(--bg3);border-left:2px solid var(--gold-d);
+  border-radius:0 6px 6px 0;padding:.6rem .9rem;
+  font-size:.82rem;color:var(--cream2);line-height:1.55;
+  margin-bottom:.85rem;font-style:italic;
+}
+.fc-opt{
+  display:block;margin-bottom:.4rem;cursor:pointer;
+  padding:7px 10px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;font-size:.83rem;color:var(--cream2);transition:all .18s;
+}
+.fc-opt:hover{background:var(--bg4);border-color:var(--border2);color:var(--cream)}
+.fc-opt input{margin-right:8px;accent-color:var(--gold)}
+.fc-hint{font-family:var(--fm);font-size:.62rem;color:var(--muted);margin-top:auto;text-align:center;width:100%}
+.fc-res-title{font-family:var(--fh);font-weight:700;font-size:1.15rem;margin-bottom:.55rem;line-height:1.2}
+.fc-res-exp{font-size:.83rem;line-height:1.55;opacity:.9;margin-bottom:.5rem}
+.fc-res-ans{font-family:var(--fm);font-size:.72rem;opacity:.75}
+
+/* ════════════════════════════════════════
+   QUIZ
+════════════════════════════════════════ */
+.quiz-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.prog-dots{display:flex;gap:5px}
+.dot{width:28px;height:5px;border-radius:10px;background:var(--bg4);transition:background .3s}
+.dot.dok{background:var(--green)}
+.dot.dko{background:var(--red-c)}
+.dot.dcur{background:var(--gold)}
+
+/* timer */
+.timer-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
+.timer-wrap svg{transform:rotate(-90deg)}
+#t-arc{transition:stroke-dashoffset 1s linear}
+.timer-num{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:var(--fm);font-size:.8rem;font-weight:500;color:var(--cream);
+}
+
+/* streak */
+.streak-strip{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:8px 14px;margin-bottom:1.1rem;
+}
+.fl{font-size:18px;filter:grayscale(1) opacity(.3);transition:all .3s}
+.fl.lit{filter:none;animation:flare .4s ease}
+@keyframes flare{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
+.streak-label{font-family:var(--fm);font-size:.64rem;color:var(--muted)}
+.streak-val{font-family:var(--fh);font-weight:700;font-size:1.05rem;color:var(--gold-l);line-height:1}
+
+/* question */
+.q-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:1.8rem;margin-bottom:1rem;
+  animation:fadeUp .3s ease;
+}
+.q-tag{font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-d);margin-bottom:.7rem}
+.q-text{font-family:var(--fh);font-weight:700;font-size:1.1rem;line-height:1.45;margin-bottom:1.2rem;color:var(--white)}
+.q-scene{
+  background:var(--bg3);border-left:3px solid var(--gold-d);
+  border-radius:0 8px 8px 0;padding:.75rem 1rem;
+  font-size:.87rem;color:var(--cream2);line-height:1.6;
+  margin-bottom:1.1rem;font-style:italic;
+}
+.opts{display:grid;gap:.5rem}
+.opt{
+  display:flex;align-items:flex-start;gap:10px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:11px 13px;cursor:pointer;text-align:left;
+  font-size:.88rem;color:var(--cream2);line-height:1.45;
+  font-family:var(--fb);transition:all .15s;
+}
+.opt:hover:not(:disabled){border-color:var(--border2);background:var(--bg4);color:var(--cream);transform:translateX(3px)}
+.opt:disabled{cursor:not-allowed}
+.opt.ok{background:rgba(30,110,72,.2);border-color:rgba(30,110,72,.5);color:#7dd3a8}
+.opt.ko{background:rgba(139,28,28,.2);border-color:rgba(139,28,28,.5);color:#f4a0a0}
+.opt-let{
+  font-family:var(--fm);font-size:.7rem;font-weight:500;
+  width:22px;height:22px;border-radius:6px;background:var(--bg4);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  margin-top:1px;transition:all .15s;color:var(--muted);
+}
+.opt.ok .opt-let{background:var(--green);border-color:var(--green);color:#fff}
+.opt.ko .opt-let{background:var(--red-c);border-color:var(--red-c);color:#fff}
+
+.fb-box{border-radius:var(--r);padding:.95rem 1.2rem;font-size:.86rem;line-height:1.55;margin-bottom:.9rem;animation:fadeUp .25s ease}
+.fb-ok{background:rgba(30,110,72,.15);border:1px solid rgba(30,110,72,.4);color:#7dd3a8}
+.fb-ko{background:rgba(139,28,28,.15);border:1px solid rgba(139,28,28,.4);color:#f4a0a0}
+
+/* ════════════════════════════════════════
+   EVALUATION 0-20  (the star feature)
+════════════════════════════════════════ */
+.eval-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:2rem;margin-bottom:1.2rem;
+  position:relative;overflow:hidden;
+}
+.eval-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.eval-score-row{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem}
+.score-circle{
+  width:90px;height:90px;border-radius:50%;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid var(--border2);position:relative;
+  background:var(--bg3);
+}
+.score-circle.pass{border-color:rgba(30,110,72,.6);background:rgba(30,110,72,.12)}
+.score-circle.fail{border-color:rgba(139,28,28,.5);background:rgba(139,28,28,.1)}
+.score-num{font-family:var(--fh);font-weight:900;font-size:2rem;line-height:1;letter-spacing:-.03em}
+.score-circle.pass .score-num{color:#7dd3a8}
+.score-circle.fail .score-num{color:#f4a0a0}
+.score-denom{font-family:var(--fm);font-size:.62rem;color:var(--muted)}
+.score-info h3{font-family:var(--fh);font-weight:700;font-size:1.2rem;color:var(--white);margin-bottom:.25rem}
+.score-status{
+  display:inline-block;font-family:var(--fm);font-size:.7rem;
+  padding:3px 10px;border-radius:20px;font-weight:500;
+}
+.status-pass{background:rgba(30,110,72,.25);color:#7dd3a8;border:1px solid rgba(30,110,72,.4)}
+.status-fail{background:rgba(139,28,28,.2);color:#f4a0a0;border:1px solid rgba(139,28,28,.35)}
+.score-xp{font-size:.82rem;color:var(--cream2);margin-top:.35rem}
+
+/* grade breakdown accordion */
+.grade-sections{display:grid;gap:.75rem}
+.grade-sec{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+}
+.grade-sec-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;cursor:pointer;transition:background .15s;
+}
+.grade-sec-hdr:hover{background:var(--bg4)}
+.grade-sec-left{display:flex;align-items:center;gap:10px}
+.grade-ico{font-size:1rem;width:24px;text-align:center}
+.grade-title{font-family:var(--fb);font-weight:600;font-size:.88rem;color:var(--cream)}
+.grade-pts{
+  font-family:var(--fm);font-size:.75rem;padding:2px 9px;border-radius:20px;
+  font-weight:500;white-space:nowrap;flex-shrink:0;
+}
+.pts-full{background:rgba(30,110,72,.25);color:#7dd3a8}
+.pts-part{background:rgba(201,150,10,.2);color:var(--gold-l)}
+.pts-zero{background:rgba(139,28,28,.2);color:#f4a0a0}
+.grade-body{padding:0 16px 14px;font-size:.84rem;color:var(--cream2);line-height:1.65;display:none}
+.grade-body.open{display:block;animation:fadeUp .2s ease}
+.grade-tag{
+  display:inline-block;font-family:var(--fm);font-size:.62rem;
+  padding:2px 7px;border-radius:6px;margin-right:5px;margin-bottom:4px;
+}
+.gtag-ok{background:rgba(30,110,72,.2);color:#7dd3a8}
+.gtag-miss{background:rgba(201,150,10,.15);color:var(--gold-l)}
+.grade-rec{
+  margin-top:.7rem;padding:.65rem .9rem;
+  background:rgba(201,150,10,.06);border-left:2px solid var(--gold-d);
+  border-radius:0 6px 6px 0;font-size:.82rem;color:var(--cream2);line-height:1.6;
+}
+.grade-rec strong{color:var(--gold-l)}
+
+/* score bar animated */
+.score-bar-wrap{margin:1rem 0 .3rem}
+.score-bar-track{height:8px;background:var(--bg4);border-radius:10px;overflow:hidden;position:relative}
+.score-bar-fill{height:100%;border-radius:10px;transition:width 1s cubic-bezier(.4,0,.2,1);position:relative}
+.score-bar-fill.pass-bar{background:linear-gradient(90deg,var(--green),#2ecc71)}
+.score-bar-fill.fail-bar{background:linear-gradient(90deg,var(--red-c),#e74c3c)}
+.bar-label{display:flex;justify-content:space-between;font-family:var(--fm);font-size:.62rem;color:var(--muted);margin-top:3px}
+.bar-pass-mark{position:absolute;left:55%;top:-2px;width:1px;height:12px;background:var(--gold-d)}
+
+/* ════════════════════════════════════════
+   MATCH
+════════════════════════════════════════ */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.match-col h4{
+  font-family:var(--fm);font-size:.65rem;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--muted);margin-bottom:.6rem;
+}
+.drag-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:10px 13px;font-size:.82rem;cursor:grab;margin-bottom:5px;
+  user-select:none;transition:all .15s;line-height:1.45;color:var(--cream2);
+}
+.drag-item:active{cursor:grabbing}
+.drag-item.dragging{opacity:.3}
+.drag-item.matched{background:rgba(30,110,72,.15);border-color:rgba(30,110,72,.4);cursor:default;color:#7dd3a8}
+.drag-item.bad{animation:shk .35s}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.drop-zone{
+  background:var(--bg);border:1px dashed var(--border);border-radius:10px;
+  padding:10px 13px;font-size:.79rem;margin-bottom:5px;min-height:44px;
+  color:var(--muted);transition:all .15s;line-height:1.45;
+}
+.drop-zone.dov{border-color:var(--gold-d);background:rgba(201,150,10,.05);color:var(--cream2)}
+.drop-zone.filled{border-style:solid;border-color:rgba(30,110,72,.5);background:rgba(30,110,72,.12);color:#7dd3a8}
+
+/* ════════════════════════════════════════
+   DETECTIVE / CASE
+════════════════════════════════════════ */
+.case-scenario{
+  background:var(--surface);border:1px solid var(--border);
+  border-left:3px solid var(--gold);border-radius:var(--r);
+  padding:1.3rem 1.5rem;margin-bottom:1.3rem;
+  font-size:.92rem;color:var(--cream2);line-height:1.7;font-style:italic;
+}
+.case-scenario strong{color:var(--gold-l);font-style:normal;font-family:var(--fm);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:.5rem}
+.case-field{margin-bottom:1rem}
+.case-field label{
+  display:block;font-family:var(--fm);font-size:.67rem;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;
+}
+.case-field input,.case-field textarea{
+  width:100%;padding:10px 13px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:9px;
+  font-family:var(--fb);font-size:.88rem;color:var(--cream);resize:vertical;
+  transition:border-color .18s;line-height:1.55;
+}
+.case-field input:focus,.case-field textarea:focus{outline:none;border-color:var(--gold-d);background:var(--bg4)}
+.case-field input::placeholder,.case-field textarea::placeholder{color:var(--muted)}
+.case-ref{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:1rem 1.2rem;margin-bottom:1.2rem;
+}
+.case-ref h4{font-family:var(--fm);font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold-d);margin-bottom:.6rem}
+.case-ref-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.4rem}
+.ref-chip{
+  background:var(--bg4);border:1px solid var(--border);border-radius:7px;
+  padding:4px 9px;font-size:.75rem;color:var(--cream2);text-align:center;
+  font-family:var(--fm);
+}
+.thinking-ani{display:inline-flex;gap:4px;vertical-align:middle}
+.thinking-ani span{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:bop .9s infinite}
+.thinking-ani span:nth-child(2){animation-delay:.15s}
+.thinking-ani span:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* ════════════════════════════════════════
+   BOSS BATTLE
+════════════════════════════════════════ */
+.boss-hd{text-align:center;margin-bottom:1.3rem}
+.boss-name{
+  font-family:var(--fh);font-weight:900;font-size:1.7rem;
+  letter-spacing:-.02em;
+  background:linear-gradient(135deg,#e74c3c,#c0392b);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:.5rem;
+}
+.boss-hp-wrap{max-width:360px;margin:0 auto}
+.boss-hp-track{height:12px;background:var(--bg4);border-radius:10px;overflow:hidden}
+.boss-hp-fill{height:100%;background:linear-gradient(90deg,#c0392b,#e74c3c);border-radius:10px;transition:width .7s ease}
+.boss-hp-txt{font-family:var(--fm);font-size:.68rem;color:var(--muted);text-align:right;margin-top:3px}
+.boss-art{font-size:5rem;text-align:center;margin:1rem 0;animation:float 3s ease-in-out infinite;display:block}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.boss-speech{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rl);padding:1.2rem 1.5rem;margin-bottom:1.1rem;
+}
+.boss-speech-tag{font-family:var(--fm);font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;color:#e74c3c;margin-bottom:.45rem}
+.boss-speech-txt{font-family:var(--fh);font-style:italic;font-size:1rem;color:var(--cream);line-height:1.5}
+.boss-opts{display:grid;gap:.5rem}
+.php-row{margin-top:1rem;text-align:center;font-family:var(--fm);font-size:.75rem;color:var(--muted)}
+
+/* ════════════════════════════════════════
+   GLOSSARY
+════════════════════════════════════════ */
+.tab-nav{
+  display:flex;gap:4px;margin-bottom:1.3rem;
+  background:var(--surface);border:1px solid var(--border);
+  padding:4px;border-radius:var(--r);overflow-x:auto;
+}
+.tab-btn{
+  flex:1;min-width:max-content;padding:7px 12px;border:none;
+  background:none;border-radius:8px;
+  font-family:var(--fm);font-size:.7rem;cursor:pointer;
+  color:var(--muted);transition:all .15s;
+}
+.tab-btn.on{background:var(--bg3);color:var(--cream);border:1px solid var(--border)}
+.tab-btn:hover:not(.on){color:var(--cream2)}
+.gloss-grid{display:grid;gap:.6rem}
+.gloss-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.gloss-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;cursor:pointer;transition:background .15s;
+}
+.gloss-hdr:hover{background:var(--bg4)}
+.gloss-term{font-family:var(--fh);font-weight:700;font-size:.92rem;color:var(--white)}
+.gloss-cat-badge{font-family:var(--fm);font-size:.62rem;padding:2px 8px;border-radius:20px}
+.gcat-el{background:rgba(44,79,163,.3);color:#90a8f0}
+.gcat-est{background:rgba(201,150,10,.2);color:var(--gold-l)}
+.gcat-vir{background:rgba(30,110,72,.25);color:#7dd3a8}
+.gcat-trap{background:rgba(139,28,28,.25);color:#f4a0a0}
+.gloss-body{padding:0 16px 14px;font-size:.84rem;color:var(--cream2);line-height:1.65;display:none}
+.gloss-body.open{display:block;animation:fadeUp .2s ease}
+.gloss-ex{
+  margin-top:.6rem;padding:.6rem .9rem;
+  background:var(--bg3);border-left:2px solid var(--gold-d);
+  border-radius:0 6px 6px 0;font-size:.8rem;font-style:italic;color:var(--muted);
+}
+.expand-ico{color:var(--muted);transition:transform .2s;font-size:.8rem}
+.gloss-hdr.expanded .expand-ico{transform:rotate(180deg)}
+
+/* ════════════════════════════════════════
+   RESULT / QUIZ RESULTS
+════════════════════════════════════════ */
+.res-center{text-align:center}
+.res-big{
+  font-family:var(--fh);font-weight:900;
+  font-size:clamp(3.5rem,12vw,6rem);
+  line-height:1;letter-spacing:-.05em;
+  background:linear-gradient(135deg,var(--gold-l),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.res-grade-pill{
+  display:inline-block;font-family:var(--fh);font-weight:700;font-size:1.4rem;
+  padding:7px 24px;border-radius:40px;margin:.8rem 0;
+  background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#0d0c0b;
+}
+.res-breakdown{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin:1.3rem 0;
+}
+.res-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  font-size:.87rem;color:var(--cream2);
+}
+.res-row:last-child{border-bottom:none}
+.res-row strong{color:var(--cream);font-weight:500}
+.badges-row{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin:.9rem 0}
+.bdg{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:5px 12px;font-size:.76rem;
+  font-family:var(--fm);color:var(--cream2);
+}
+.bdg.earned{background:rgba(201,150,10,.15);border-color:var(--gold-d);color:var(--gold-l)}
+
+/* ════════════════════════════════════════
+   LEVEL-UP OVERLAY
+════════════════════════════════════════ */
+#lv-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;z-index:999;
+}
+#lv-overlay.show{display:flex;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.lv-modal{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--rxl);padding:2.5rem 2rem;text-align:center;
+  max-width:320px;width:90%;
+  box-shadow:0 0 80px rgba(201,150,10,.2);
+  animation:popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.lv-ico{font-size:4rem;margin-bottom:.5rem}
+.lv-title{
+  font-family:var(--fh);font-weight:900;font-size:2rem;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--gold-l),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:.25rem;
+}
+.lv-sub{color:var(--muted);font-size:.86rem;margin-bottom:1.5rem}
+
+/* ════════════════════════════════════════
+   XP TOAST
+════════════════════════════════════════ */
+.xp-toast{
+  position:fixed;top:62px;right:16px;
+  background:var(--surface2);border:1px solid var(--border2);color:var(--gold-l);
+  font-family:var(--fm);font-size:.8rem;padding:6px 14px;border-radius:8px;
+  animation:tIn .3s ease,tOut .3s ease 1.7s forwards;z-index:998;pointer-events:none;
+}
+@keyframes tIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes tOut{from{opacity:1}to{opacity:0}}
+
+/* ════════════════════════════════════════
+   SECTION DIVIDER / UTILS
+════════════════════════════════════════ */
+.sep{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+.row{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center}
+.row-c{justify-content:center}
+.mt1{margin-top:.5rem}.mt2{margin-top:1rem}.mt3{margin-top:1.5rem}
+.txt-m{color:var(--muted);font-size:.83rem}
+.txt-gold{color:var(--gold-l)}
+.serif{font-family:var(--fh)}
+.mono{font-family:var(--fm)}
+@media(max-width:500px){
+  .match-grid{grid-template-columns:1fr}
+  .modes-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header id="hdr">
+  <div class="logo" onclick="goHome()">Mente<em style="-webkit-text-fill-color:var(--cream2);font-style:normal">Crítica</em></div>
+  <div class="hud">
+    <div class="chip"><span class="chip-ico">⚡</span><span id="hxp">0 XP</span></div>
+    <div class="chip"><span class="chip-ico">🔥</span><span id="hstr">0</span></div>
+    <div class="chip">
+      <span style="font-size:.62rem;color:var(--muted)">Nv.</span>
+      <span id="hlv">1</span>
+      <div class="xp-bar-wrap"><div class="xp-bar-inner" id="xpbar" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div id="s-home" class="scr on">
+  <div class="home-eyebrow">Paul &amp; Elder · Fundación para el Pensamiento Crítico</div>
+  <h1 class="home-title">
+    Domina el arte de<br>
+    <span class="italic">pensar bien.</span>
+  </h1>
+  <p class="home-sub">Simulador gamificado basado en la <em>Mini-Guía para el Pensamiento Crítico</em>. Aprende, practica y recibe evaluación detallada con nota de 0 a 20.</p>
+
+  <div class="modes-grid">
+    <div class="mcard" onclick="startFlash()">
+      <span class="mcard-ico">🃏</span>
+      <div class="mcard-name">Flashcards</div>
+      <div class="mcard-desc">Gira las tarjetas y pon a prueba tu conocimiento.</div>
+      <span class="mbadge mb-gold">Clásico</span>
+    </div>
+    <div class="mcard" onclick="startQuiz()">
+      <span class="mcard-ico">⏱</span>
+      <div class="mcard-name">Quiz Cronometrado</div>
+      <div class="mcard-desc">5 preguntas con temporizador. Rapidez = bonus XP.</div>
+    </div>
+    <div class="mcard" onclick="startCase()">
+      <span class="mcard-ico">🔍</span>
+      <div class="mcard-name">Detective Lógico</div>
+      <div class="mcard-desc">Analiza un caso real. Evaluación y nota de 0–20.</div>
+      <span class="mbadge mb-new">★ Evaluado</span>
+    </div>
+    <div class="mcard" onclick="startMatch()">
+      <span class="mcard-ico">🔗</span>
+      <div class="mcard-name">Conecta Conceptos</div>
+      <div class="mcard-desc">Arrastra conceptos a sus definiciones exactas.</div>
+    </div>
+    <div class="mcard" onclick="startBoss()">
+      <span class="mcard-ico">⚔️</span>
+      <div class="mcard-name">Batalla Final</div>
+      <div class="mcard-desc">Enfrenta al Sesgo Absoluto. Pon a prueba todo.</div>
+      <span class="mbadge mb-dark">Jefe</span>
+    </div>
+    <div class="mcard" onclick="startGloss()">
+      <span class="mcard-ico">📖</span>
+      <div class="mcard-name">Glosario</div>
+      <div class="mcard-desc">26 conceptos clave con definiciones y ejemplos.</div>
+    </div>
+  </div>
+
+  <div class="home-stats">
+    <div><div class="hstat-num" id="st-tot">0</div><div class="hstat-lbl">Preguntas</div></div>
+    <div><div class="hstat-num" id="st-ok">0</div><div class="hstat-lbl">Correctas</div></div>
+    <div><div class="hstat-num" id="st-str">0</div><div class="hstat-lbl">Racha Máx.</div></div>
+    <div><div class="hstat-num" id="st-lv">1</div><div class="hstat-lbl">Nivel</div></div>
+  </div>
+  <p class="txt-m mt2" style="text-align:center"><em>Mini-Guía para el Pensamiento Crítico</em> · Dr. Richard Paul &amp; Dra. Linda Elder · © 2003 Foundation for Critical Thinking</p>
+</div>
+
+<!-- ══════════════ FLASHCARDS ══════════════ -->
+<div id="s-flash" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">🃏 Flashcards</span>
+    <button class="btn btn-ghost btn-sm" onclick="startFlash()">↺ Nuevo set</button>
+  </div>
+  <p class="txt-m" style="margin-bottom:1.2rem">Selecciona tu respuesta en cada tarjeta, luego haz clic en <strong style="color:var(--cream2)">"Evaluar"</strong> para girarlas. Gana +8 XP por acierto.</p>
+  <div class="fc-grid" id="fc-grid"></div>
+  <div class="row row-c mt2">
+    <button class="btn btn-gold btn-lg" id="fc-eval-btn" onclick="evalFlash()">Evaluar respuestas</button>
+  </div>
+  <div id="fc-score-area" class="mt3" style="display:none"></div>
+  <div id="fc-done" class="row row-c mt2" style="display:none">
+    <button class="btn btn-gold" onclick="startFlash()">↺ Nuevo set</button>
+    <button class="btn btn-outline" onclick="goHome()">← Inicio</button>
+  </div>
+</div>
+
+<!-- ══════════════ QUIZ ══════════════ -->
+<div id="s-quiz" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">⏱ Quiz Cronometrado</span>
+    <div class="timer-wrap">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r="22" fill="none" stroke="var(--bg4)" stroke-width="3"/>
+        <circle id="t-arc" cx="26" cy="26" r="22" fill="none" stroke="var(--gold)" stroke-width="3"
+          stroke-dasharray="138.2" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="tnum">20</div>
+    </div>
+  </div>
+
+  <div class="quiz-hd">
+    <div class="prog-dots" id="pdots"></div>
+    <div></div>
+  </div>
+
+  <div class="streak-strip">
+    <div style="display:flex;gap:3px" id="flames">
+      <span class="fl" id="fl1">🔥</span><span class="fl" id="fl2">🔥</span>
+      <span class="fl" id="fl3">🔥</span><span class="fl" id="fl4">🔥</span><span class="fl" id="fl5">🔥</span>
+    </div>
+    <div>
+      <div class="streak-label">Racha actual</div>
+      <div class="streak-val" id="strval">0</div>
+    </div>
+  </div>
+
+  <div class="q-card" id="qcard">
+    <div class="q-tag" id="qtag"></div>
+    <div class="q-text" id="qtext"></div>
+    <div class="q-scene" id="qscene" style="display:none"></div>
+    <div class="opts" id="qopts"></div>
+  </div>
+  <div id="qfb"></div>
+  <div class="row row-c mt1">
+    <button class="btn btn-ghost btn-sm" id="qnext" style="display:none" onclick="nextQ()">Siguiente →</button>
+  </div>
+</div>
+
+<!-- ══════════════ QUIZ RESULTS ══════════════ -->
+<div id="s-qres" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">Resultados del Quiz</span>
+    <button class="btn btn-ghost btn-sm" onclick="startQuiz()">↺ Repetir</button>
+  </div>
+  <div class="res-center">
+    <div id="resi" style="font-size:2.8rem;margin-bottom:.4rem"></div>
+    <div class="res-big" id="resscore"></div>
+    <div class="res-grade-pill" id="resgrade"></div>
+    <div id="restitle" style="font-family:var(--fh);font-weight:700;font-size:1.15rem;color:var(--white);margin-bottom:.3rem"></div>
+    <div id="ressub" class="txt-m" style="margin-bottom:1.2rem"></div>
+    <div class="badges-row" id="resbdg"></div>
+    <div class="res-breakdown" id="resbd"></div>
+    <div class="row row-c mt3">
+      <button class="btn btn-gold" onclick="startQuiz()">Jugar de nuevo</button>
+      <button class="btn btn-outline" onclick="goHome()">← Inicio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DETECTIVE / CASE ══════════════ -->
+<div id="s-case" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">🔍 Detective Lógico</span>
+    <button class="btn btn-ghost btn-sm" onclick="startCase()">↺ Nuevo caso</button>
+  </div>
+
+  <p class="txt-m" style="margin-bottom:1rem">Aplica los elementos y estándares del pensamiento crítico de Paul &amp; Elder. Recibirás una nota de <strong style="color:var(--gold-l)">0 a 20</strong> con retroalimentación detallada.</p>
+
+  <div class="case-scenario"><strong>Caso de análisis</strong><span id="case-txt"></span></div>
+
+  <div class="case-ref">
+    <h4>Recuerda usar estos elementos del pensamiento crítico</h4>
+    <div class="case-ref-grid">
+      <span class="ref-chip">Propósito</span><span class="ref-chip">Supuestos</span>
+      <span class="ref-chip">Información</span><span class="ref-chip">Inferencias</span>
+      <span class="ref-chip">Implicaciones</span><span class="ref-chip">Perspectivas</span>
+      <span class="ref-chip">Claridad</span><span class="ref-chip">Profundidad</span>
+      <span class="ref-chip">Amplitud</span><span class="ref-chip">Lógica</span>
+    </div>
+  </div>
+
+  <div id="case-form">
+    <div class="case-field">
+      <label>1 · ¿Cuál es el supuesto central del argumento? ¿Qué da por hecho el autor?</label>
+      <input type="text" id="ca1" placeholder="Ej: Se asume que la experiencia personal es suficiente evidencia para rechazar datos científicos…">
+    </div>
+    <div class="case-field">
+      <label>2 · ¿Qué información, evidencia o datos faltan o son inválidos?</label>
+      <input type="text" id="ca2" placeholder="Ej: No se citan estudios científicos ni datos estadísticos que respalden la posición…">
+    </div>
+    <div class="case-field">
+      <label>3 · ¿Qué falacia, sesgo o error de razonamiento detectas? Nómbralo.</label>
+      <input type="text" id="ca3" placeholder="Ej: Egocentrismo innato, generalización apresurada, ad hominem, auto-validación…">
+    </div>
+    <div class="case-field">
+      <label>4 · ¿Qué estándar intelectual se viola principalmente? (claridad, exactitud, profundidad, amplitud, lógica…)</label>
+      <input type="text" id="ca4" placeholder="Ej: Se viola la profundidad y la amplitud, porque el argumento es superficial y unilateral…">
+    </div>
+    <div class="case-field">
+      <label>5 · ¿Cuáles son las implicaciones si se acepta este argumento sin cuestionarlo?</label>
+      <textarea id="ca5" rows="3" placeholder="Ej: Aceptar esto sin cuestionar podría legitimar decisiones basadas en sesgos personales, ignorar evidencia científica y generar políticas injustas…"></textarea>
+    </div>
+    <div class="row row-c mt2">
+      <button class="btn btn-gold btn-lg" onclick="evalCase()">Analizar y evaluar →</button>
+    </div>
+  </div>
+
+  <div id="case-eval-area" style="display:none"></div>
+  <div id="case-done" class="row row-c mt3" style="display:none">
+    <button class="btn btn-gold" onclick="startCase()">↺ Nuevo caso</button>
+    <button class="btn btn-outline" onclick="goHome()">← Inicio</button>
+  </div>
+</div>
+
+<!-- ══════════════ MATCH ══════════════ -->
+<div id="s-match" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">🔗 Conecta Conceptos</span>
+    <button class="btn btn-ghost btn-sm" onclick="startMatch()">↺ Nuevo</button>
+  </div>
+  <p class="txt-m" style="margin-bottom:.9rem" id="match-lbl">Pares encontrados: 0 / 6 · Arrastra cada concepto a su definición. +15 XP por par correcto.</p>
+  <div class="match-grid">
+    <div><h4>Conceptos</h4><div id="drag-col"></div></div>
+    <div><h4>Definiciones</h4><div id="drop-col"></div></div>
+  </div>
+  <div id="match-fb" class="mt2"></div>
+  <div id="match-done" class="row row-c mt2" style="display:none">
+    <button class="btn btn-gold" onclick="startMatch()">↺ Nuevo set</button>
+    <button class="btn btn-outline" onclick="goHome()">← Inicio</button>
+  </div>
+</div>
+
+<!-- ══════════════ BOSS ══════════════ -->
+<div id="s-boss" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">⚔️ Batalla Final</span>
+    <div></div>
+  </div>
+  <div class="boss-hd">
+    <div class="boss-name" id="bossname">El Sesgo Absoluto</div>
+    <div class="boss-hp-wrap">
+      <div class="boss-hp-track"><div class="boss-hp-fill" id="bosshp" style="width:100%"></div></div>
+      <div class="boss-hp-txt"><span id="bosshpn">100</span> / 100 HP</div>
+    </div>
+  </div>
+  <span class="boss-art" id="bossart">🧠</span>
+  <div class="boss-speech" id="boss-speech">
+    <div class="boss-speech-tag">El jefe lanza una falacia…</div>
+    <div class="boss-speech-txt" id="boss-atk-txt"></div>
+  </div>
+  <div class="boss-opts" id="boss-opts"></div>
+  <div id="boss-fb" class="mt1"></div>
+  <div class="php-row">Tu HP: <span id="php">3</span> / 3 ❤️</div>
+</div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<div id="s-gloss" class="scr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Inicio</button>
+    <span class="scr-label">📖 Glosario Vivo</span>
+    <div></div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn on" onclick="filterG('all',this)">Todo</button>
+    <button class="tab-btn" onclick="filterG('elemento',this)">Elementos</button>
+    <button class="tab-btn" onclick="filterG('estándar',this)">Estándares</button>
+    <button class="tab-btn" onclick="filterG('virtud',this)">Virtudes</button>
+    <button class="tab-btn" onclick="filterG('trampa',this)">Trampas</button>
+  </div>
+  <div class="gloss-grid" id="gloss-grid"></div>
+</div>
+
+<!-- ══ LEVEL UP ══ -->
+<div id="lv-overlay">
+  <div class="lv-modal">
+    <div class="lv-ico">🌟</div>
+    <div class="lv-title">¡Nivel <span id="lvnum">2</span>!</div>
+    <div class="lv-sub" id="lvsub"></div>
+    <button class="btn btn-gold" onclick="closeLv()">¡Excelente!</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   DATA — QUESTIONS (15)
+════════════════════════════════════════ */
+const QS=[
+  {tag:"Definición",text:"¿Qué es el pensamiento crítico según Paul y Elder?",opts:["Pensar rápido y sin cometer errores","Un modo de pensar que mejora su calidad al apoderarse de las estructuras inherentes del acto de pensar y someterlas a estándares intelectuales","Memorizar mucha información relevante","Resolver problemas con métodos matemáticos"],ans:1,exp:"El pensador crítico mejora su pensamiento aplicando estándares intelectuales a las estructuras del acto de pensar: propósito, supuestos, inferencias, implicaciones, etc.",xp:10},
+  {tag:"Resultado",text:"¿Cuál es el resultado de un pensador crítico y ejercitado?",opts:["Acepta la primera información que recibe","Formula problemas y preguntas vitales con claridad y precisión, evalúa información relevante y llega a conclusiones probadas","Evita comunicarse sobre problemas complejos","Depende exclusivamente de sus emociones"],ans:1,exp:"El pensador crítico formula problemas con precisión, acumula y evalúa información relevante, llega a conclusiones y se comunica efectivamente.",xp:10},
+  {tag:"Elementos",text:"¿Cuál de estos NO es un elemento del pensamiento de la rueda de Paul & Elder?",opts:["Propósito","Supuestos","Popularidad","Implicaciones"],ans:2,exp:"Los 8 elementos son: Propósito, Pregunta en cuestión, Información, Puntos de vista, Implicaciones, Supuestos, Conceptos e Inferencias. La popularidad no es un elemento.",xp:10},
+  {tag:"Estándares",text:"'José está sobrepeso.' Es claro y exacto. ¿Qué estándar intelectual le falta?",opts:["Relevancia","Amplitud","Precisión","Lógica"],ans:2,exp:"La precisión exige detalles específicos: ¿de cuántas libras hablamos? Un enunciado puede ser claro y exacto pero impreciso si no especifica la cantidad o el grado.",xp:10},
+  {tag:"Egocentrismo",text:"'Es cierto porque así siempre lo he creído.' Este estándar psicológico egocéntrico se llama:",opts:["Sociocentrismo innato","Auto-validación innata","Cumplimiento de deseos","Egoísmo innato"],ans:1,exp:"La auto-validación innata es el fuerte deseo de mantener creencias antiguas sin considerar si están justificadas por la evidencia.",xp:15},
+  {tag:"Virtudes",text:"La 'Entereza Intelectual' se opone directamente a:",opts:["Humildad intelectual","Cobardía intelectual","Autonomía intelectual","Empatía intelectual"],ans:1,exp:"La entereza (valentía) intelectual consiste en enfrentar y atender con justicia ideas hacia las que no nos sentimos atraídos. Su opuesto es la cobardía intelectual.",xp:15},
+  {tag:"Egocentrismo",text:"'Es cierto porque me conviene creerlo.' Este patrón egocéntrico se llama:",opts:["Sociocentrismo innato","Cumplimiento de deseos","Egoísmo innato","Auto-validación"],ans:2,exp:"El egoísmo innato consiste en aferrarse a creencias que justifican ventajas de poder o dinero, sin importar la evidencia ni la razón.",xp:15},
+  {tag:"Tipos de pregunta",text:"¿Cuál pregunta pertenece al tipo 'ningún sistema' (subjetiva)?",opts:["¿Cuánto es 2+2?","¿Cuál es el mejor sabor de helado?","¿La Tierra orbita al Sol?","¿Cuándo cayó el Muro de Berlín?"],ans:1,exp:"Las preguntas de 'ningún sistema' buscan preferencias subjetivas que no pueden evaluarse con lógica ni con evidencia. Son de opinión personal.",xp:10},
+  {tag:"Lista de cotejo",text:"Según la lista de cotejo para razonar de Paul & Elder, ¿cuál es el primer punto fundamental?",opts:["Todo razonamiento parte de información","Todo razonamiento tiene un propósito","Todo razonamiento contiene inferencias","Todo razonamiento se hace desde una perspectiva"],ans:1,exp:"Punto 1: 'Todo razonamiento tiene un PROPÓSITO.' Es el punto de partida del análisis de cualquier argumento.",xp:10},
+  {tag:"Estándares",scenario:"Un político dice: 'Simplemente di no a la corrupción.'",text:"Esta frase es clara, exacta y relevante. ¿Qué estándar intelectual le falta?",opts:["Exactitud","Profundidad","Precisión","Amplitud"],ans:1,exp:"La profundidad atiende la complejidad real de un problema. 'Di no a la corrupción' es superficial: no aborda causas, contextos ni soluciones concretas.",xp:15},
+  {tag:"Humildad",text:"¿Qué implica la 'Humildad Intelectual' según Paul y Elder?",opts:["Pretender saber más de lo que realmente se sabe","Aceptar pasivamente todo lo que hemos aprendido","Estar consciente de los límites de tu conocimiento, incluyendo susceptibilidad al egocentrismo","Cambiar de opinión fácilmente ante cualquier argumento"],ans:2,exp:"La humildad intelectual reconoce los propios límites y la susceptibilidad al egocentrismo. No es sumisión: es honestidad epistémica y ausencia de arrogancia.",xp:10},
+  {tag:"Egocentrismo",text:"'Es cierto porque NOSOTROS lo creemos.' Este estándar psicológico describe:",opts:["Egoísmo innato","Auto-validación","Sociocentrismo innato","Cumplimiento de deseos"],ans:2,exp:"El sociocentrismo innato asume que las creencias dominantes del grupo propio son correctas sin cuestionarlas ni examinar sus fundamentos.",xp:15},
+  {tag:"Estándares",scenario:"María descarta el punto de vista de los campesinos sobre la reforma agraria: 'ellos solo piensan en sus tierras.'",text:"¿Qué estándar intelectual viola principalmente María?",opts:["Precisión","Claridad","Amplitud","Exactitud"],ans:2,exp:"La amplitud exige considerar diversas perspectivas. María descarta un punto de vista sin examinarlo, limitando su razonamiento a un solo lado.",xp:15},
+  {tag:"Virtudes",text:"La 'Autonomía Intelectual' implica:",opts:["Depender de la opinión de los expertos siempre","Dominar racionalmente tus propias creencias e inferencias, pensar por ti mismo","Seguir las creencias del grupo social dominante","Aceptar sin cuestionar lo que te enseñaron"],ans:1,exp:"La autonomía intelectual es pensar por uno mismo: analizar y evaluar creencias desde la razón y la evidencia, no por conformidad con el grupo.",xp:15},
+  {tag:"Estándares",text:"¿Cuál estándar intelectual evalúa si las ideas combinadas se apoyan entre sí y tienen sentido?",opts:["Claridad","Exactitud","Relevancia","Lógica"],ans:3,exp:"La lógica evalúa si las ideas se apoyan mutuamente. Cuando las ideas combinadas se contradicen o 'no tienen sentido', hay falta de lógica en el razonamiento.",xp:15},
+];
+
+const PAIRS=[
+  {c:"Humildad Intelectual",d:"Estar consciente de los límites del propio conocimiento; no pretender saber más de lo que se sabe."},
+  {c:"Propósito",d:"Meta u objetivo que guía el razonamiento. Todo pensamiento parte de algún propósito."},
+  {c:"Sociocentrismo",d:"Asumir que las creencias del grupo propio son correctas sin cuestionarlas."},
+  {c:"Amplitud",d:"Considerar otras perspectivas y examinar la situación desde múltiples puntos de vista."},
+  {c:"Supuestos",d:"Presuposiciones aceptadas como dadas que dan forma al razonamiento sin ser cuestionadas."},
+  {c:"Entereza Intelectual",d:"Valentía de enfrentar ideas incomodas hacia las que no nos sentimos atraídos si tienen sustento racional."},
+  {c:"Inferencias",d:"Interpretaciones por las cuales se llega a conclusiones a partir de datos y evidencia."},
+  {c:"Imparcialidad",d:"Tratar todos los puntos de vista con los mismos estándares, sin importar intereses personales."},
+  {c:"Profundidad",d:"Atender la complejidad real de un problema, no tratarlo de forma superficial."},
+  {c:"Auto-validación",d:"Defender creencias antiguas por su antigüedad sin examinar si están justificadas."},
+];
+
+const CASES=[
+  "Un político rechaza los datos científicos sobre el cambio climático: 'Llevo años viviendo aquí y el clima se siente exactamente igual que siempre. Los científicos exageran para pedir más fondos a los gobiernos.'",
+  "Una empresa tecnológica lanza un nuevo producto sin realizar pruebas de usuario porque el CEO afirma: 'Llevo 20 años en esta industria. Sé perfectamente lo que la gente quiere sin necesidad de preguntarles.'",
+  "El comité del vecindario vota prohibir el acceso de jóvenes al parque comunal después de las 6 PM porque 'el mes pasado unos chicos hicieron ruido un viernes. Si lo hicieron una vez, todos los jóvenes son problemáticos.'",
+  "Un anuncio de suplementos alimenticios promete 'Perder 10 kilos en una semana' respaldado únicamente en el testimonio de una celebridad, sin ninguna evidencia médica ni nutricional.",
+  "Un estudiante ve el titular 'El nuevo virus es un engaño gubernamental' en una red social y lo reenvía inmediatamente a su familia entera sin leer el artículo ni verificar la fuente.",
+  "Un analista financiero descarta un modelo económico emergente argumentando: 'Siempre hemos invertido de manera tradicional y nos ha funcionado. No hay razón para explorar nada nuevo ni diferente.'",
+  "Durante un debate sobre política de salud, una persona ataca la vestimenta y la apariencia física de su oponente en lugar de refutar los argumentos concretos que este acaba de presentar.",
+  "Un paciente abandona su tratamiento médico prescrito y lo sustituye por remedios de un foro anónimo porque 'la industria farmacéutica solo quiere nuestro dinero. Los médicos no pueden saber más que la experiencia colectiva.'",
+];
+
+const BOSS_ATTACKS=[
+  {atk:"'Todo el mundo lo sabe. No necesitas evidencia para creerlo si todos están de acuerdo.'",correct:1,opts:["Tiene razón, el consenso popular es evidencia suficiente","Esto es sociocentrismo innato: la popularidad no reemplaza la evidencia ni el razonamiento riguroso","Puede ser válido dependiendo del tema específico","Si lo dicen muchos expertos, es válido aceptarlo"],exp:"El sociocentrismo asume que lo que cree el grupo es cierto. La popularidad no es un estándar intelectual válido."},
+  {atk:"'¿Para qué cuestionar esto? ¡Siempre ha funcionado así! La tradición no se toca.'",correct:2,opts:["Es razonable respetar la tradición sin cuestionarla","Depende del contexto histórico de la tradición","Hay que examinar todo con evidencia y razón, incluso lo que ha funcionado antes","Si funcionó antes, funcionará siempre por definición"],exp:"La auto-validación innata defiende creencias antiguas sin examinar si siguen justificadas. El pensador crítico cuestiona con razón, no con rebeldía."},
+  {atk:"'Tu argumento viene de ese grupo político. Ya sé que es falso sin necesidad de escucharlo.'",correct:0,opts:["Esto es ad hominem: ataca la fuente, no el argumento. La validez depende de la lógica y evidencia, no de quién lo dice","Si la fuente es sospechosa, el argumento automáticamente es inválido","Tiene razón si ese grupo tiene conflictos de interés conocidos","La procedencia de un argumento determina su validez lógica"],exp:"Atacar la fuente en lugar del argumento es una falacia ad hominem. La validez depende de la lógica y la evidencia interna del argumento."},
+  {atk:"'Me siento absolutamente seguro de esto. Esa certeza interior es la prueba de que es verdad.'",correct:2,opts:["La seguridad interna es señal de conocimiento sólido y bien fundamentado","Si lo siente con convicción profunda, probablemente tenga razón","El sentimiento de certeza es un estado psicológico, no evidencia. La verdad requiere razonamiento y datos, no solo convicción","La convicción personal es una forma válida de conocimiento intuitivo"],exp:"La certeza subjetiva es un estado psicológico, no epistémico. El egocentrismo innato nos hace creer que lo que creemos es cierto. La verdad requiere evidencia."},
+  {atk:"'Este problema es demasiado complejo. Es mejor no analizarlo a fondo y dejarlo a los expertos.'",correct:1,opts:["Es sabio reconocer límites y abstenerse de opinar sobre lo complejo","La Perseverancia Intelectual exige enfrentar la complejidad para lograr comprensión más profunda","Simplificar siempre es mejor para comunicar ideas a otros","Solo los especialistas deben analizar temas complejos"],exp:"La Perseverancia Intelectual es la virtud de no rendirse ante la complejidad. Evitarla es Pereza Intelectual, el opuesto de esta virtud."},
+  {atk:"'No soy objetivo, lo admito. Pero mis datos son los correctos y los tuyos están sesgados.'",correct:2,opts:["Si lo admite abiertamente, ya demostró integridad suficiente","La objetividad no importa mientras existan buenas intenciones","Reconocer el sesgo no lo cancela; se requiere Imparcialidad activa y los mismos estándares para todos los argumentos","Es un buen punto de partida para el diálogo honesto"],exp:"La Integridad Intelectual exige aplicar los mismos estándares de rigor a los propios argumentos que a los ajenos. Reconocer el sesgo no lo elimina."},
+];
+
+const GLOSSARY=[
+  {term:"Propósito",cat:"elemento",def:"Meta u objetivo que guía el razonamiento. Todo pensamiento parte de algún propósito, explícito o implícito.",ex:"Al escribir un ensayo, tu propósito puede ser convencer, informar o explorar. Identificarlo te ayuda a evaluar si el razonamiento está enfocado."},
+  {term:"Pregunta en cuestión",cat:"elemento",def:"El problema o asunto que el razonamiento intenta resolver. Formularla con precisión es el segundo paso del análisis.",ex:"Antes de opinar sobre educación, precisa: ¿qué pregunta específica estás respondiendo? ¿Calidad docente? ¿Financiamiento? ¿Metodología?"},
+  {term:"Supuestos",cat:"elemento",def:"Presuposiciones que se aceptan como dadas y que dan forma a las conclusiones, aunque raramente se examinan.",ex:"'Trabaja duro y tendrás éxito' asume que el esfuerzo individual garantiza resultados sin considerar contexto social o acceso a oportunidades."},
+  {term:"Implicaciones",cat:"elemento",def:"Consecuencias que se desprenden de un razonamiento si se acepta como válido. Pueden ser positivas o negativas.",ex:"Aceptar sin cuestionar la frase 'di no a las drogas' implica ignorar causas sociales profundas y no generar políticas efectivas."},
+  {term:"Inferencias",cat:"elemento",def:"Interpretaciones por las que se llega a conclusiones a partir de datos. Solo se debe inferir lo que la evidencia realmente apoya.",ex:"Ver nubes oscuras e inferir lluvia es válido. Inferir que habrá tormenta eléctrica solo porque ayer llovió, no lo es."},
+  {term:"Puntos de vista",cat:"elemento",def:"Perspectiva o marco de referencia desde el cual se aborda un problema. Todo razonamiento parte de alguna perspectiva.",ex:"Un médico y un paciente tienen perspectivas distintas sobre el mismo diagnóstico. Ambas son válidas y complementarias."},
+  {term:"Información",cat:"elemento",def:"Datos, hechos, observaciones y experiencias que sustentan el razonamiento. Debe ser rigurosa y relevante.",ex:"Un argumento sobre nutrición debe basarse en estudios clínicos, no en anécdotas aisladas ni testimonios de celebridades."},
+  {term:"Conceptos",cat:"elemento",def:"Teorías, definiciones, axiomas o principios que enmarcan el razonamiento. Deben usarse con cuidado y precisión.",ex:"Si hablas de 'justicia', aclara qué concepto usas: ¿justicia distributiva? ¿restaurativa? ¿retributiva?"},
+  {term:"Claridad",cat:"estándar",def:"Primer estándar intelectual. Si un planteamiento es confuso, no se puede evaluar su exactitud ni relevancia.",ex:"'¿Qué hacer con la educación?' es vago. '¿Cómo pueden los docentes fomentar el pensamiento crítico en secundaria?' es claro."},
+  {term:"Exactitud",cat:"estándar",def:"El planteamiento debe ser verificable y verdadero. Un enunciado puede ser claro pero completamente inexacto.",ex:"'La mayoría de los perros pesan más de 300 libras' es claro pero inexacto y fácilmente verificable."},
+  {term:"Precisión",cat:"estándar",def:"Aportar detalles específicos. Un planteamiento puede ser claro y exacto pero impreciso.",ex:"'José tiene sobrepeso' es claro pero impreciso. ¿Cuánto? ¿Una libra o cincuenta? La precisión importa."},
+  {term:"Relevancia",cat:"estándar",def:"El planteamiento debe guardar relación directa con el problema en cuestión.",ex:"El esfuerzo del estudiante puede ser irrelevante para una calificación si no refleja aprendizaje real de los contenidos."},
+  {term:"Profundidad",cat:"estándar",def:"Atender la complejidad real de un problema, no simplificarlo superficialmente.",ex:"'Di no a las drogas' es superficial: no aborda las raíces sociales, económicas y psicológicas del consumo adolescente."},
+  {term:"Amplitud",cat:"estándar",def:"Considerar diversas perspectivas antes de concluir. Un razonamiento puede ser profundo pero carecer de amplitud.",ex:"Un análisis político que solo considera una ideología carece de amplitud, aunque sea profundo dentro de esa visión."},
+  {term:"Lógica",cat:"estándar",def:"Las ideas combinadas deben apoyarse entre sí. Si se contradicen, el razonamiento es ilógico.",ex:"Decir 'respeto la ciencia' y rechazar datos científicos inconvenientes es una contradicción lógica."},
+  {term:"Imparcialidad",cat:"estándar",def:"Tratar todos los puntos de vista con los mismos estándares, sin importar intereses personales o grupales.",ex:"Aplicar el mismo nivel de escrutinio crítico a las ideas de tu partido y a las del partido opositor."},
+  {term:"Humildad Intelectual",cat:"virtud",def:"Estar consciente de los límites del propio conocimiento. No pretender saber más de lo que se sabe. No implica sumisión.",ex:"Admitir 'No soy experto en este tema, necesito informarme mejor antes de opinar' es humildad intelectual genuina."},
+  {term:"Entereza Intelectual",cat:"virtud",def:"Valentía para enfrentar ideas que nos incomodan si tienen sustento racional, aunque vayan contra nuestras creencias.",ex:"Un científico que examina datos que contradicen su hipótesis favorita y los acepta demuestra entereza intelectual."},
+  {term:"Empatía Intelectual",cat:"virtud",def:"Capacidad de reconstruir con precisión el razonamiento de otros. Ponerse en el lugar del otro para entenderlo.",ex:"Antes de refutar un argumento, ser capaz de exponerlo fielmente como lo haría su propio autor."},
+  {term:"Autonomía Intelectual",cat:"virtud",def:"Dominar racionalmente las propias creencias e inferencias. Pensar por uno mismo con base en razón y evidencia.",ex:"Cuestionar una noticia viral antes de compartirla; verificar la fuente y evaluar el argumento por cuenta propia."},
+  {term:"Integridad Intelectual",cat:"virtud",def:"Ser honesto en el pensar; aplicar los mismos estándares a los propios argumentos que a los ajenos.",ex:"Exigir evidencia a tu oponente y también a ti mismo, sin dobles raseros ni privilegiar tus propias conclusiones."},
+  {term:"Perseverancia Intelectual",cat:"virtud",def:"Mantener el rigor intelectual ante dificultades; no rendirse ante la complejidad o la confusión.",ex:"Seguir investigando un tema difícil aunque los primeros resultados sean confusos o contradictorios."},
+  {term:"Egocentrismo",cat:"trampa",def:"Tendencia a evaluar el mundo desde la perspectiva propia sin considerar la de los demás ni cuestionarla.",ex:"'Si a mí me afecta, es el problema más importante del mundo' sin considerar otras perspectivas."},
+  {term:"Sociocentrismo",cat:"trampa",def:"Asumir que las creencias del grupo propio son correctas sin cuestionarlas ni examinar sus fundamentos.",ex:"'Nosotros siempre tomamos las mejores decisiones porque somos el grupo correcto.'"},
+  {term:"Auto-validación",cat:"trampa",def:"Defender creencias antiguas por su antigüedad, sin examinar si están justificadas por la evidencia actual.",ex:"'Siempre lo hemos hecho así y nunca ha fallado' sin cuestionar si podría funcionar mejor de otra forma."},
+  {term:"Egoísmo Innato",cat:"trampa",def:"Aferrarse a creencias que justifican ventajas personales de poder o dinero, ignorando la evidencia.",ex:"Un ejecutivo que ignora estudios sobre daños ambientales porque afectarían las ganancias de su empresa."},
+];
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+const ST={xp:0,lv:1,streak:0,best:0,total:0,correct:0};
+const XP_LV=[0,60,150,280,440,640,880,1160,1480,1850,2300];
+let qz={qs:[],cur:0,ok:0,timer:null,left:20,answered:false};
+let MS={pairs:[],matched:0,drag:null};
+let BS={hp:100,php:3,cur:0,atks:[]};
+
+/* ════════════════════════════════════════
+   XP / LEVEL SYSTEM
+════════════════════════════════════════ */
+function addXP(n){
+  const old=ST.lv; ST.xp+=n; toast('+'+n+' XP');
+  const prev=XP_LV[ST.lv-1]||0,next=XP_LV[ST.lv]||2300;
+  document.getElementById('xpbar').style.width=Math.min(100,((ST.xp-prev)/(next-prev))*100)+'%';
+  document.getElementById('hxp').textContent=ST.xp+' XP';
+  while(ST.lv<10&&ST.xp>=XP_LV[ST.lv])ST.lv++;
+  document.getElementById('hlv').textContent=ST.lv;
+  if(ST.lv>old)showLv(ST.lv);
+}
+function toast(msg){const t=document.createElement('div');t.className='xp-toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
+const LV_MSG={2:'¡Modo Detective desbloqueado!',3:'¡Acceso a la Batalla Final!',4:'¡Eres Pensador Practicante!',5:'¡Mitad del camino al dominio!',7:'¡Pensador Avanzado!',10:'¡MAESTRO del Pensamiento Crítico!'};
+function showLv(n){document.getElementById('lvnum').textContent=n;document.getElementById('lvsub').textContent=LV_MSG[n]||'¡Sigue avanzando hacia el dominio!';document.getElementById('lv-overlay').classList.add('show')}
+function closeLv(){document.getElementById('lv-overlay').classList.remove('show')}
+function updStreak(ok){
+  if(ok){ST.streak++;if(ST.streak>ST.best)ST.best=ST.streak}else ST.streak=0;
+  document.getElementById('hstr').textContent=ST.streak;
+  document.getElementById('strval').textContent=ST.streak;
+  for(let i=1;i<=5;i++)document.getElementById('fl'+i).classList.toggle('lit',i<=Math.min(ST.streak,5));
+}
+
+/* ════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════ */
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0)}
+function goHome(){if(qz.timer)clearInterval(qz.timer);show('s-home');document.getElementById('st-tot').textContent=ST.total;document.getElementById('st-ok').textContent=ST.correct;document.getElementById('st-str').textContent=ST.best;document.getElementById('st-lv').textContent=ST.lv}
+
+/* ════════════════════════════════════════
+   FLASHCARDS
+════════════════════════════════════════ */
+let flashQs=[],flashDone=false;
+function startFlash(){
+  flashDone=false;show('s-flash');
+  flashQs=[...QS].sort(()=>Math.random()-.5).slice(0,4);
+  document.getElementById('fc-eval-btn').disabled=false;
+  document.getElementById('fc-score-area').style.display='none';
+  document.getElementById('fc-done').style.display='none';
+  const grid=document.getElementById('fc-grid');grid.innerHTML='';
+  const L=['A','B','C','D'];
+  flashQs.forEach((q,i)=>{
+    let opts='';
+    q.opts.forEach((o,j)=>{opts+=`<label class="fc-opt"><input type="radio" name="fq${i}" value="${j}"> ${L[j]}. ${o}</label>`});
+    grid.innerHTML+=`<div class="flip-card" id="fc${i}">
+      <div class="flip-inner">
+        <div class="flip-f">
+          <div class="fc-q">P${i+1}. ${q.text}</div>
+          ${q.scenario?`<div class="fc-scene">${q.scenario}</div>`:''}
+          ${opts}
+          <div class="fc-hint">↑ Selecciona y evalúa</div>
+        </div>
+        <div class="flip-b finfo" id="fb${i}">
+          <div class="fc-res-title" id="fr${i}"></div>
+          <div class="fc-res-exp">${q.exp}</div>
+          <div class="fc-res-ans">✓ ${L[q.ans]}. ${q.opts[q.ans]}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+}
+function evalFlash(){
+  if(flashDone)return;
+  let all=true;
+  flashQs.forEach((_,i)=>{if(!document.querySelector(`input[name="fq${i}"]:checked`))all=false});
+  if(!all){toast('Responde todas las tarjetas primero');return}
+  flashDone=true;let score=0;
+  flashQs.forEach((q,i)=>{
+    const sel=parseInt(document.querySelector(`input[name="fq${i}"]:checked`).value);
+    const ok=sel===q.ans;if(ok){score++;ST.correct++;}ST.total++;updStreak(ok);
+    const fb=document.getElementById('fb'+i),fr=document.getElementById('fr'+i);
+    fb.classList.remove('finfo');fb.classList.add(ok?'fok':'fko');
+    fr.textContent=ok?'✓ ¡Correcto! +8 XP':'✗ Incorrecto';
+    if(ok)addXP(8);
+    document.getElementById('fc'+i).classList.add('flipped');
+  });
+  document.getElementById('fc-eval-btn').disabled=true;
+  setTimeout(()=>{
+    document.getElementById('fc-score-area').style.display='block';
+    const pct=score/flashQs.length;
+    document.getElementById('fc-score-area').innerHTML=`
+      <div class="eval-card">
+        <div class="eval-score-row">
+          <div class="score-circle ${pct>=.5?'pass':'fail'}">
+            <div class="score-num">${score*5}</div>
+            <div class="score-denom">de 20</div>
+          </div>
+          <div class="score-info">
+            <h3>${pct===1?'¡Perfecto!':pct>=.75?'¡Muy bien!':pct>=.5?'Aprobado':'Necesitas repasar'}</h3>
+            <span class="score-status ${pct>=.5?'status-pass':'status-fail'}">${pct>=.5?'✓ Aprobado':'✗ No aprobado'} · Nota mínima: 10/20</span>
+            <div class="score-xp">+${score*8} XP ganados</div>
+          </div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-track">
+            <div class="score-bar-fill ${pct>=.5?'pass-bar':'fail-bar'}" style="width:${pct*100}%"></div>
+            <div class="bar-pass-mark"></div>
+          </div>
+          <div class="bar-label"><span>0</span><span>Aprobado (10)</span><span>20</span></div>
+        </div>
+        <p class="txt-m mt2">${score<flashQs.length?'Revisa el Glosario para reforzar los conceptos donde fallaste y vuelve a intentarlo.':'¡Excelente dominio! Intenta el Quiz Cronometrado o el Detective Lógico.'}</p>
+      </div>`;
+    document.getElementById('fc-done').style.display='flex';
+  },1300);
+}
+
+/* ════════════════════════════════════════
+   QUIZ
+════════════════════════════════════════ */
+function startQuiz(){
+  if(qz.timer)clearInterval(qz.timer);
+  qz.qs=[...QS].sort(()=>Math.random()-.5).slice(0,5);
+  qz.cur=0;qz.ok=0;qz.answered=false;
+  show('s-quiz');buildDots();loadQ();
+}
+function buildDots(){
+  const c=document.getElementById('pdots');c.innerHTML='';
+  qz.qs.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===0?' dcur':'');d.id='d'+i;c.appendChild(d)});
+}
+function loadQ(){
+  clearInterval(qz.timer);qz.answered=false;
+  document.getElementById('qfb').innerHTML='';
+  document.getElementById('qnext').style.display='none';
+  const q=qz.qs[qz.cur];
+  document.getElementById('qtag').textContent=q.tag;
+  document.getElementById('qtext').textContent=q.text;
+  const sc=document.getElementById('qscene');
+  if(q.scenario){sc.textContent=q.scenario;sc.style.display='block'}else sc.style.display='none';
+  const og=document.getElementById('qopts');og.innerHTML='';
+  ['A','B','C','D'].forEach((l,i)=>{
+    const b=document.createElement('button');b.className='opt';
+    b.innerHTML=`<span class="opt-let">${l}</span><span>${q.opts[i]}</span>`;
+    b.onclick=()=>ansQ(i,b);og.appendChild(b);
+  });
+  document.getElementById('qcard').style.animation='none';
+  requestAnimationFrame(()=>document.getElementById('qcard').style.animation='fadeUp .3s ease');
+  startTimer();
+}
+function startTimer(){
+  qz.left=20;const arc=document.getElementById('t-arc'),num=document.getElementById('tnum');
+  const C=138.2;arc.style.stroke='var(--gold)';
+  qz.timer=setInterval(()=>{
+    qz.left--;num.textContent=qz.left;
+    arc.style.strokeDashoffset=C*(1-qz.left/20);
+    if(qz.left<=5)arc.style.stroke='#e74c3c';
+    if(qz.left<=0){clearInterval(qz.timer);if(!qz.answered)timeout()}
+  },1000);
+}
+function timeout(){
+  qz.answered=true;ST.total++;updStreak(false);
+  const q=qz.qs[qz.cur];
+  document.querySelectorAll('.opt').forEach((b,i)=>{b.disabled=true;if(i===q.ans)b.classList.add('ok')});
+  showFB(false,`⏱ Tiempo. ${q.exp}`,q.opts[q.ans]);dotDone(false);
+  setTimeout(()=>{if(qz.cur<qz.qs.length-1)document.getElementById('qnext').style.display='inline-flex';else setTimeout(showQRes,900)},700);
+}
+function ansQ(idx,btn){
+  if(qz.answered)return;clearInterval(qz.timer);qz.answered=true;ST.total++;
+  const q=qz.qs[qz.cur];const ok=idx===q.ans;
+  if(ok){qz.ok++;ST.correct++}
+  document.querySelectorAll('.opt').forEach((b,i)=>{b.disabled=true;if(i===q.ans)b.classList.add('ok');else if(i===idx&&!ok)b.classList.add('ko')});
+  updStreak(ok);
+  let xp=ok?q.xp:0;
+  if(ok&&ST.streak>=3)xp=Math.round(xp*1.5);
+  if(ok&&qz.left>=15)xp+=5;
+  if(xp>0)addXP(xp);
+  showFB(ok,q.exp,q.opts[q.ans]);dotDone(ok);
+  setTimeout(()=>{if(qz.cur<qz.qs.length-1)document.getElementById('qnext').style.display='inline-flex';else setTimeout(showQRes,900)},700);
+}
+function showFB(ok,exp,ans){
+  document.getElementById('qfb').innerHTML=`<div class="fb-box ${ok?'fb-ok':'fb-ko'}"><strong>${ok?'✓ Correcto':'✗ Incorrecto'}</strong> — ${exp}${!ok?`<br><strong>Respuesta correcta:</strong> ${ans}`:''}${ok&&ST.streak>=3?'<br>🔥 Bonus de racha aplicado':''}</div>`;
+}
+function dotDone(ok){
+  const d=document.getElementById('d'+qz.cur);
+  if(d){d.classList.remove('dcur');d.classList.add(ok?'dok':'dko')}
+  const nx=document.getElementById('d'+(qz.cur+1));if(nx)nx.classList.add('dcur');
+}
+function nextQ(){qz.cur++;document.getElementById('qnext').style.display='none';loadQ()}
+function showQRes(){
+  show('s-qres');const s=qz.ok,t=qz.qs.length,nota=s*4;
+  document.getElementById('resscore').textContent=`${nota}/20`;
+  const G=[{t:'Maestro',g:'S',e:'🏆',s:'Dominio absoluto del pensamiento crítico.'},{t:'Avanzado',g:'A',e:'🎯',s:'Excelente. Muy cerca del dominio.'},{t:'Practicante',g:'B',e:'📈',s:'Buen progreso. Sigue practicando.'},{t:'Principiante',g:'C',e:'📚',s:'Buen camino. Estudia el Glosario.'},{t:'Retado',g:'D',e:'💡',s:'No te rindas. El error forma parte del proceso.'}];
+  const g=G[s===5?0:s===4?1:s===3?2:s===2?3:4];
+  document.getElementById('resi').textContent=g.e;
+  document.getElementById('resgrade').textContent=g.g+' · '+g.t;
+  document.getElementById('restitle').textContent=nota>=11?'✓ Aprobado':'✗ No aprobado · Nota mínima: 11/20';
+  document.getElementById('restitle').style.color=nota>=11?'#7dd3a8':'#f4a0a0';
+  document.getElementById('ressub').textContent=g.s;
+  const bds=[];
+  if(s===5)bds.push({t:'Perfecto 🏆',e:true});
+  if(ST.streak>=3)bds.push({t:`Racha ×${ST.streak} 🔥`,e:true});
+  if(nota>=11)bds.push({t:'Aprobado ✓',e:true});
+  document.getElementById('resbdg').innerHTML=bds.map(b=>`<span class="bdg ${b.e?'earned':''}">${b.t}</span>`).join('');
+  document.getElementById('resbd').innerHTML=`
+    <div class="res-row"><span>Correctas</span><strong>${s} / ${t}</strong></div>
+    <div class="res-row"><span>Nota (sobre 20)</span><strong>${nota} / 20 ${nota>=11?'✓':''}</strong></div>
+    <div class="res-row"><span>Racha máxima</span><strong>${ST.best}</strong></div>
+    <div class="res-row"><span>XP acumulado</span><strong>${ST.xp}</strong></div>
+    <div class="res-row"><span>Nivel actual</span><strong>${ST.lv}</strong></div>`;
+}
+
+/* ════════════════════════════════════════
+   DETECTIVE / CASE — EVALUATION 0-20
+════════════════════════════════════════ */
+function startCase(){
+  show('s-case');
+  document.getElementById('case-txt').textContent=CASES[Math.floor(Math.random()*CASES.length)];
+  document.getElementById('case-form').style.display='block';
+  document.getElementById('case-eval-area').style.display='none';
+  document.getElementById('case-done').style.display='none';
+  ['ca1','ca2','ca3','ca4','ca5'].forEach(id=>document.getElementById(id).value='');
+}
+
+function evalCase(){
+  const a1=document.getElementById('ca1').value.trim();
+  const a2=document.getElementById('ca2').value.trim();
+  const a3=document.getElementById('ca3').value.trim();
+  const a4=document.getElementById('ca4').value.trim();
+  const a5=document.getElementById('ca5').value.trim();
+  if(!a1||!a2||!a3||!a4||!a5){toast('Completa todos los campos antes de evaluar');return}
+  document.getElementById('case-form').style.display='none';
+  const area=document.getElementById('case-eval-area');
+  area.style.display='block';
+  area.innerHTML=`<div class="eval-card"><h3 style="font-family:var(--fh);margin-bottom:.5rem;color:var(--cream)">Analizando tu respuesta…</h3><div class="thinking-ani"><span></span><span></span><span></span></div></div>`;
+
+  setTimeout(()=>{
+    /* ── SCORING ENGINE ── */
+    const kw={
+      a1:{keys:['asume','supone','cree que','da por hecho','presupone','parte de','premisa','supuesto','asumiendo'],label:"Identificación del supuesto"},
+      a2:{keys:['evidencia','datos','prueba','estadística','fuente','estudio','investigación','sin respaldo','carece de','falta de','no hay'],label:"Evaluación de la evidencia"},
+      a3:{keys:['generalización','egocentrismo','sesgo','ad hominem','falacia','sociocentrismo','apelación a','auto-validación','egoísmo','anecdótico','cherry','straw'],label:"Identificación de la falacia"},
+      a4:{keys:['claridad','exactitud','precisión','relevancia','profundidad','amplitud','lógica','imparcialidad','exacto','superficial','unilateral','inconsistent'],label:"Aplicación de estándares"},
+      a5:{keys:['consecuencia','implicación','podría','generaría','afectaría','resultado','impacto','derivar','conlleva','llevaría'],minLen:50,label:"Análisis de implicaciones"},
+    };
+
+    const fields=[a1,a2,a3,a4,a5];
+    const fieldIds=['a1','a2','a3','a4','a5'];
+    const maxPts=[4,4,4,4,4]; // each out of 4, total 20
+    const results=[];
+
+    fields.forEach((txt,i)=>{
+      const k=kw[fieldIds[i]];
+      const found=k.keys.filter(kw=>txt.toLowerCase().includes(kw));
+      const lenOk=k.minLen?txt.length>=k.minLen:txt.length>=20;
+      let pts=0;
+      if(found.length>=2&&lenOk)pts=maxPts[i];
+      else if(found.length>=1&&lenOk)pts=Math.round(maxPts[i]*.6);
+      else if(found.length>=1||lenOk)pts=Math.round(maxPts[i]*.3);
+      results.push({pts,max:maxPts[i],found,label:k.label,txt,lenOk});
+    });
+
+    const total=results.reduce((s,r)=>s+r.pts,0); // 0-20
+    const pct=total/20;
+    const pass=total>=11;
+    const xpEarned=Math.round(total*2.5);
+    if(xpEarned>0)addXP(xpEarned);
+    ST.total++;if(pass)ST.correct++;
+
+    /* feedback per criterion */
+    const criteriaHTML=results.map((r,i)=>{
+      const pClass=r.pts===r.max?'pts-full':r.pts>0?'pts-part':'pts-zero';
+      const ico=r.pts===r.max?'✓':r.pts>0?'△':'✗';
+
+      // what they did well
+      let well='';
+      if(r.found.length>0)well+=`Identificaste conceptos clave: <span class="grade-tag gtag-ok">${r.found.slice(0,3).join('</span> <span class="grade-tag gtag-ok">')}</span>. `;
+      if(r.lenOk&&i===4)well+='Tu respuesta tiene suficiente extensión y desarrollo. ';
+
+      // what to improve
+      let improve='';
+      const missing={
+        0:'Usa frases como "se asume que…", "da por hecho que…" o "presupone que…" para identificar el supuesto explícitamente.',
+        1:'Menciona qué tipo de evidencia falta: estudios, estadísticas, fuentes verificables, datos empíricos.',
+        2:'Nombra la falacia específica: egocentrismo innato, generalización apresurada, ad hominem, auto-validación, cumplimiento de deseos, etc.',
+        3:'Menciona un estándar intelectual específico de Paul & Elder: claridad, exactitud, precisión, relevancia, profundidad, amplitud o lógica.',
+        4:'Desarrolla consecuencias concretas: ¿qué pasaría en la práctica si este argumento se acepta sin cuestionar?'
+      };
+      if(r.pts<r.max)improve=missing[i];
+      if(!r.lenOk&&i===4)improve='Desarrolla más esta sección: al menos 2–3 oraciones con consecuencias específicas y concretas. ';
+
+      return `<div class="grade-sec">
+        <div class="grade-sec-hdr" onclick="toggleSec(this)">
+          <div class="grade-sec-left">
+            <span class="grade-ico">${ico}</span>
+            <span class="grade-title">${r.label}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="grade-pts ${pClass}">${r.pts} / ${r.max} pts</span>
+            <span class="expand-ico">▼</span>
+          </div>
+        </div>
+        <div class="grade-body">
+          ${well?`<p><strong style="color:#7dd3a8">✓ Lo que hiciste bien:</strong> ${well}</p>`:''}
+          ${improve?`<p style="margin-top:.5rem"><strong style="color:#f4a0a0">△ Para mejorar:</strong> ${improve}</p>`:''}
+          <div class="grade-rec"><strong>💡 Recomendación:</strong> ${getRecom(i,r.pts,r.max)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    /* general recommendations */
+    const genRecom=getGeneralRecom(total,results);
+
+    area.innerHTML=`
+      <div class="eval-card">
+        <div class="eval-score-row">
+          <div class="score-circle ${pass?'pass':'fail'}">
+            <div class="score-num">${total}</div>
+            <div class="score-denom">de 20</div>
+          </div>
+          <div class="score-info">
+            <h3 style="font-size:1.3rem">${getGradeTitle(total)}</h3>
+            <span class="score-status ${pass?'status-pass':'status-fail'}">${pass?'✓ Aprobado':'✗ No aprobado'} · Mínimo: 11 / 20</span>
+            <div class="score-xp">+${xpEarned} XP · Nivel ${ST.lv}</div>
+          </div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-track">
+            <div class="score-bar-fill ${pass?'pass-bar':'fail-bar'}" style="width:0%" id="sbar"></div>
+            <div class="bar-pass-mark" title="Nota mínima: 11"></div>
+          </div>
+          <div class="bar-label"><span>0</span><span style="color:var(--gold-d)">Aprobado (11)</span><span>20</span></div>
+        </div>
+        <p class="txt-m mt1">${genRecom}</p>
+      </div>
+
+      <h3 style="font-family:var(--fh);font-weight:700;font-size:1.05rem;color:var(--white);margin:1.5rem 0 .8rem">
+        Desglose por criterio — haz clic para ver el detalle
+      </h3>
+      <div class="grade-sections">${criteriaHTML}</div>
+
+      <div class="eval-card mt3" style="background:var(--bg3)">
+        <h4 style="font-family:var(--fm);font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--gold-d);margin-bottom:.7rem">
+          Plantilla de Paul & Elder que debías aplicar
+        </h4>
+        <p style="font-size:.83rem;color:var(--cream2);line-height:1.7">
+          La <em>Mini-Guía</em> propone analizar todo argumento identificando: <strong style="color:var(--cream)">Propósito → Pregunta clave → Información y evidencia → Supuestos → Perspectivas → Inferencias → Implicaciones</strong>. 
+          Aplica estos 8 elementos junto con los estándares de Claridad, Exactitud, Precisión, Relevancia, Profundidad, Amplitud y Lógica.
+        </p>
+      </div>`;
+
+    // animate bar
+    setTimeout(()=>{const b=document.getElementById('sbar');if(b)b.style.width=(pct*100)+'%'},100);
+    document.getElementById('case-done').style.display='flex';
+  },1800);
+}
+
+function getGradeTitle(n){
+  if(n>=18)return '🏆 Excelente — Pensador Maestro';
+  if(n>=15)return '🎯 Muy Bien — Pensador Avanzado';
+  if(n>=11)return '📈 Aprobado — Pensador Practicante';
+  if(n>=7) return '📚 Por mejorar — Pensador Principiante';
+  return '💡 Necesitas repasar — Pensador Retado';
+}
+function getRecom(i,pts,max){
+  const r=[
+    'Consulta la sección "Supuestos" del Glosario. Los supuestos son "lo que se acepta como dado" sin cuestionar. Siempre pregunta: ¿qué está dando por hecho esta persona?',
+    'Revisa el estándar de Exactitud en la guía. Toda afirmación debe poder verificarse. Pregunta: ¿cómo se puede corroborar que esto es cierto? ¿Qué datos respaldan esta posición?',
+    'Estudia el apartado "Egocentrismo" de la Mini-Guía. Los patrones más comunes son: egocentrismo innato, sociocentrismo, auto-validación, cumplimiento de deseos y egoísmo innato.',
+    'Repasa los Estándares Intelectuales Universales en la guía: Claridad, Exactitud, Precisión, Relevancia, Profundidad, Amplitud y Lógica. Identifica cuál se viola principalmente.',
+    'Usa la plantilla de análisis: "Si se acepta este argumento, las implicaciones serían… Para quienes… En el ámbito de… Las consecuencias negativas incluirían…"'
+  ][i];
+  return r;
+}
+function getGeneralRecom(total,results){
+  const weakest=results.reduce((min,r,i)=>r.pts/r.max<results[min].pts/results[min].max?i:min,0);
+  const labels=['supuestos del argumento','evidencia y datos','falacias y sesgos','estándares intelectuales de Paul & Elder','implicaciones y consecuencias'];
+  if(total>=18)return 'Análisis sobresaliente. Demostraste dominio de los elementos y estándares del pensamiento crítico. Te recomendamos intentar la Batalla Final.';
+  if(total>=11)return `Buen análisis. Tu punto más débil fue el criterio de <strong style="color:var(--gold-l)">${labels[weakest]}</strong>. Refuerza ese aspecto consultando el Glosario y vuelve a intentarlo.`;
+  if(total>=7)return `Tu análisis necesita mayor profundidad. Enfócate especialmente en identificar <strong style="color:var(--gold-l)">${labels[weakest]}</strong>. Lee el apartado correspondiente en el Glosario antes de reintentar.`;
+  return 'Tu análisis es muy incompleto. Te recomendamos primero estudiar el Glosario Vivo completo, luego hacer las Flashcards, y finalmente volver a intentar el Detective Lógico con mayor desarrollo en cada campo.';
+}
+function toggleSec(hdr){
+  const body=hdr.nextElementSibling;body.classList.toggle('open');hdr.classList.toggle('expanded');
+}
+
+/* ════════════════════════════════════════
+   MATCH
+════════════════════════════════════════ */
+function startMatch(){
+  show('s-match');MS.matched=0;MS.drag=null;
+  document.getElementById('match-fb').innerHTML='';
+  document.getElementById('match-done').style.display='none';
+  document.getElementById('match-lbl').textContent='Pares encontrados: 0 / 6 · +15 XP por par correcto.';
+  const sh=[...PAIRS].sort(()=>Math.random()-.5).slice(0,6);
+  MS.pairs=sh;
+  const left=[...sh].sort(()=>Math.random()-.5);
+  const right=[...sh].sort(()=>Math.random()-.5);
+  const dc=document.getElementById('drag-col'),dr=document.getElementById('drop-col');
+  dc.innerHTML='';dr.innerHTML='';
+  left.forEach(p=>{
+    const el=document.createElement('div');el.className='drag-item';el.textContent=p.c;el.dataset.c=p.c;el.draggable=true;
+    el.addEventListener('dragstart',()=>{MS.drag=p.c;el.classList.add('dragging')});
+    el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+    dc.appendChild(el);
+  });
+  right.forEach(p=>{
+    const z=document.createElement('div');z.className='drop-zone';z.textContent=p.d;z.dataset.c=p.c;
+    z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('dov')});
+    z.addEventListener('dragleave',()=>z.classList.remove('dov'));
+    z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('dov');dropMatch(z,p.c)});
+    dr.appendChild(z);
+  });
+}
+function dropMatch(zone,exp){
+  if(!MS.drag)return;
+  const ok=MS.drag===exp;
+  const el=document.querySelector(`.drag-item[data-c="${MS.drag}"]`);
+  if(ok){
+    zone.classList.add('filled');zone.textContent=`✓ ${MS.drag}`;
+    el?.remove();MS.matched++;addXP(15);
+    document.getElementById('match-lbl').textContent=`Pares encontrados: ${MS.matched} / 6 · +15 XP por par correcto.`;
+    if(MS.matched===6){
+      document.getElementById('match-fb').innerHTML=`<div class="fb-box fb-ok"><strong>🎉 ¡Completado!</strong> Conectaste todos los pares. +30 XP bonus.</div>`;
+      addXP(30);document.getElementById('match-done').style.display='flex';
+    }
+  }else{
+    el?.classList.add('bad');setTimeout(()=>el?.classList.remove('bad'),400);toast('Intenta otra combinación');
+  }
+  MS.drag=null;
+}
+
+/* ════════════════════════════════════════
+   BOSS
+════════════════════════════════════════ */
+function startBoss(){
+  show('s-boss');BS.hp=100;BS.php=3;BS.cur=0;
+  BS.atks=[...BOSS_ATTACKS].sort(()=>Math.random()-.5);
+  updBoss();loadAtk();
+}
+function updBoss(){
+  document.getElementById('bosshp').style.width=BS.hp+'%';
+  document.getElementById('bosshpn').textContent=BS.hp;
+  document.getElementById('php').textContent='❤️'.repeat(BS.php)||'💀';
+}
+const ARTS=['🧠','😈','🌀','🕸️','🎭','👁️'];
+function loadAtk(){
+  if(BS.cur>=BS.atks.length){bossWin();return}
+  const a=BS.atks[BS.cur];
+  document.getElementById('boss-atk-txt').textContent=a.atk;
+  document.getElementById('bossart').textContent=ARTS[BS.cur%ARTS.length];
+  document.getElementById('boss-fb').innerHTML='';
+  const opts=document.getElementById('boss-opts');opts.innerHTML='';
+  a.opts.map((o,i)=>({o,i})).sort(()=>Math.random()-.5).forEach(({o,i})=>{
+    const b=document.createElement('button');b.className='opt';
+    b.innerHTML=`<span class="opt-let">→</span><span>${o}</span>`;
+    b.onclick=()=>bossAns(i,b,a);opts.appendChild(b);
+  });
+}
+function bossAns(idx,btn,a){
+  const ok=idx===a.correct;
+  document.querySelectorAll('#boss-opts .opt').forEach(b=>b.disabled=true);btn.classList.add(ok?'ok':'ko');
+  if(ok){BS.hp=Math.max(0,BS.hp-Math.round(100/BOSS_ATTACKS.length));addXP(20);document.getElementById('boss-fb').innerHTML=`<div class="fb-box fb-ok"><strong>⚔️ Golpe crítico!</strong> ${a.exp}</div>`}
+  else{BS.php--;document.getElementById('boss-fb').innerHTML=`<div class="fb-box fb-ko"><strong>💥 ¡El sesgo te ataca!</strong> ${a.exp}</div>`}
+  updBoss();
+  if(BS.php<=0){setTimeout(bossDead,1300);return}
+  BS.cur++;setTimeout(loadAtk,2000);
+}
+function bossWin(){
+  addXP(120);
+  document.getElementById('s-boss').innerHTML=`
+    <div class="topbar"><button class="back-btn" onclick="goHome()">← Inicio</button><span class="scr-label">⚔️ Batalla Final</span><div></div></div>
+    <div style="text-align:center;padding:3rem 1rem">
+      <div style="font-size:5rem;margin-bottom:1rem">🏆</div>
+      <div style="font-family:var(--fh);font-weight:900;font-size:2.2rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--gold-l),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">¡Sesgo derrotado!</div>
+      <p class="txt-m" style="margin-bottom:2rem">Has demostrado dominio del pensamiento crítico. +120 XP</p>
+      <div class="row row-c"><button class="btn btn-gold btn-lg" onclick="startBoss()">↺ Revancha</button><button class="btn btn-outline" onclick="goHome()">← Inicio</button></div>
+    </div>`;
+}
+function bossDead(){
+  document.getElementById('s-boss').innerHTML=`
+    <div class="topbar"><button class="back-btn" onclick="goHome()">← Inicio</button><span class="scr-label">⚔️ Batalla Final</span><div></div></div>
+    <div style="text-align:center;padding:3rem 1rem">
+      <div style="font-size:5rem;margin-bottom:1rem">💀</div>
+      <div style="font-family:var(--fh);font-weight:900;font-size:2.2rem;color:#f4a0a0;margin-bottom:.5rem">El sesgo te venció</div>
+      <p class="txt-m" style="margin-bottom:2rem">Estudia el Glosario y el Detective Lógico antes de volver a intentarlo.</p>
+      <div class="row row-c"><button class="btn btn-gold" onclick="startBoss()">Intentar de nuevo</button><button class="btn btn-outline" onclick="goHome()">← Inicio</button></div>
+    </div>`;
+}
+
+/* ════════════════════════════════════════
+   GLOSSARY
+════════════════════════════════════════ */
+const GCAT={elemento:'gcat-el',estándar:'gcat-est',virtud:'gcat-vir',trampa:'gcat-trap'};
+const GNAME={elemento:'Elemento',estándar:'Estándar',virtud:'Virtud',trampa:'Trampa egocéntrica'};
+function startGloss(){show('s-gloss');renderG(GLOSSARY)}
+function renderG(items){
+  const g=document.getElementById('gloss-grid');g.innerHTML='';
+  items.forEach(item=>{
+    const card=document.createElement('div');card.className='gloss-card';
+    card.innerHTML=`
+      <div class="gloss-hdr" onclick="this.classList.toggle('expanded');this.nextElementSibling.classList.toggle('open')">
+        <span class="gloss-term">${item.term}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="gloss-cat-badge ${GCAT[item.cat]}">${GNAME[item.cat]}</span>
+          <span class="expand-ico">▼</span>
+        </div>
+      </div>
+      <div class="gloss-body">
+        <p>${item.def}</p>
+        ${item.ex?`<div class="gloss-ex"><strong>Ejemplo:</strong> ${item.ex}</div>`:''}
+      </div>`;
+    g.appendChild(card);
+  });
+}
+function filterG(cat,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  renderG(cat==='all'?GLOSSARY:GLOSSARY.filter(g=>g.cat===cat));
+}
+</script>
+</body>
+</html>
